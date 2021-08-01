@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Страница об авторе{% endblock %}
+{% block content %}
+  <div class="row">
+    <!-- Левый вспомогательный блок -->
+    <div class="col-md-3 mb-3 mt-1">
+      <div class="card">
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <div class="h3">
+                Об авторе
+              </div>
+            </li>
+            <li class="list-group-item">
+              <div class="h6 text-muted">
+                Тут я увлекательно рассказываю информацию 
+                о себе. Даю ссылки на свой аккаунт в Github, на страницу 
+                своего резюме и на любые другие свои ресурсы в сети, 
+                рассказываю, что меня вдохновляет, как я пришел в мир 
+                программирования и как я себя ощущаю в этом мире.
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- Тело страницы -->
+    <div class="col-md-9">
+      <div class="card-body">
+        <div class="card-text">
+          <p>Текст страницы "Об авторе"</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

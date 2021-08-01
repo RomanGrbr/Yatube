@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Технологии{% endblock %}
+{% block content %}
+  <div class="row">
+    <!-- Левый вспомогательный блок -->
+    <div class="col-md-3 mb-3 mt-1">
+      <div class="card">
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <div class="h3">
+                О технологии
+              </div>
+            </li>
+            <li class="list-group-item">
+              <div class="h6 text-muted">
+                На этой странице я рассказываю, какие программные инструменты 
+                я предпринял для создания этого сайта, какие навыки 
+                мне помогли, с чем я хорошо разобрался, а с чем — не очень.
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- Тело страницы -->
+    <div class="col-md-9">
+      <div class="card-body">
+        <div class="card-text">
+          <p>Текст страницы "О Технологии"</p>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

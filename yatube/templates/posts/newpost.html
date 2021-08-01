@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+  {% block title %}{% if not post %}Добавить запись {% else %} Редактировать запись {% endif %}{% endblock %}
+  {% block header %}{% if not post %}Добавить запись {% else %} Редактировать запись {% endif %}{% endblock %}
+{% block content %}
+  {% load user_filters %}
+​
+  <div class="row justify-content-center">
+    <div class="col-md-8 p-5">
+      <div class="card">
+        <div class="card-header">{% if not post %}Добавить запись {% else %} Редактировать запись {% endif %}</div>
+        <div class="card-body">
+​
+          {% for error in form.errors %}
+            <div class="alert alert-danger" role="alert">
+              {{ error }}
+            </div>
+          {% endfor %}
+          {% if not post %}
+​            <form method="POST" enctype="multipart/form-data" action="{% url 'new_post' %}">
+            {% else %}
+            <form method="POST" enctype="multipart/form-data" action="{% url 'post_edit' post_id=post.id username=post.author.username %}">
+          {% endif %}
+            {% csrf_token %}
+            {% for field in form %}
+              <div class="form-group row" aria-required={{ field.field.required }}>
+                <label
+                  for="{{ field.id_for_label }}"
+                  class="col-md-4 col-form-label text-md-right">
+                  {{ field.label }}
+                  {% if field.field.required %}
+                    <span class="required">*</span>
+                  {% endif %}
+                </label>
+                <div class="col-md-6">
+                  {# подключаем фильтр и указываем класс #}
+                  {{ field|addclass:"form-control" }}
+                  {% if field.help_text %}
+                    <small
+                      id="{{ field.id_for_label }}-help"
+                      class="form-text text-muted">
+                      {{ field.help_text|safe }}
+                    </small>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+​
+            <div class="col-md-6 offset-md-4">
+              <button type="submit" class="btn btn-primary">
+                {% if post %}Сохранить{% else %} Добавить{% endif %}
+              </button>
+            </div>
+          </form>
+        </div> <!-- card body -->
+      </div> <!-- card -->
+    </div> <!-- col -->
+  </div> <!-- row -->
+​
+{% endblock %}

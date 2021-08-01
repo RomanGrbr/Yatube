@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+
+  <head>
+    <meta charset="utf-8"> <!-- Кодировка сайта -->
+    <meta 
+        name="viewport" 
+        content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
+    
+    <title>
+      {% block title %}The Last Social Media You'll Ever Need
+       | Yatube{% endblock %}</title>
+    
+    <!-- Загрузка статики -->
+    {% load static %}
+    <link 
+        rel="stylesheet"
+        href="{% static 'bootstrap/dist/css/bootstrap.min.css' %}">
+    <script src="{% static 'jquery/dist/jquery.min.js' %}"></script>
+    <script src="{% static 'bootstrap/dist/js/bootstrap.min.js' %}"></script>
+
+  </head>
+
+  <body>
+    {% include 'nav.html' %}
+    <main>
+      <div class="container">
+        {% block content %}
+          <!-- Содержимое страницы -->
+        {% endblock %}
+      </div>
+    </main>
+    {% include 'footer.html' %}
+  </body>
+
+</html>

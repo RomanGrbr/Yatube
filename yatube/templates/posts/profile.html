@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Профиль пользователя{% endblock %}
+{% block header %}Профиль пользователя{% endblock %}
+{% block content %}
+<main role="main" class="container">
+  <div class="row">
+    <div class="col-md-3 mb-3 mt-1">
+      <div class="card">
+        <div class="card-body">
+          <div class="h2">
+            {{ user_name.get_full_name }}
+          </div>
+          <div class="h3 text-muted">
+            <!-- username автора -->
+           <a href="{% url 'profile' user_name.username %}">@{{ user_name.username }}</a>
+          </div>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            <div class="h6 text-muted">
+              Подписчиков: XXX <br>
+              Подписан: XXX
+            </div>
+          </li>
+          <li class="list-group-item">
+            <div class="h6 text-muted">
+              <!-- Количество записей -->
+              Записей: {{ page.paginator.count }}
+            </div>
+          </li>
+          <li class="list-group-item">
+            {% if following %}
+              <a
+                class="btn btn-lg btn-light"
+                href="{% url 'profile_unfollow' profile.username %}" role="button">
+                Отписаться
+              </a>
+            {% else %}
+              <a
+                class="btn btn-lg btn-primary"
+              href="{% url 'profile_follow' profile.username %}" role="button">
+              Подписаться
+              </a>
+            {% endif %}
+          </li>
+        </ul>
+      </div>
+    </div>
+      <div class="col-md-9">
+      {% for post in page %}
+      <!-- Начало блока с отдельным постом -->
+      {% include "posts/post_item.html" with post=post %}
+      <!-- Конец блока с отдельным постом -->
+      {% endfor %}
+      <!-- Остальные посты -->
+      <!-- Здесь постраничная навигация паджинатора -->
+      {% include "paginator.html" %}
+    </div>
+   </div>
+</main>
+{% endblock %}
