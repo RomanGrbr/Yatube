@@ -1,8 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import constraints, fields
 from django.utils import timezone
-from django.db.models import F, Q
 
 User = get_user_model()
 
@@ -58,14 +56,19 @@ class Comment(models.Model):
             self.created = timezone.now()
         super().save(*args, **kwargs)
 
+
 class Follow(models.Model):
+    # ссылка на объект пользователя, который подписывается на меня
     user = models.ForeignKey(User, on_delete=models.CASCADE,
-                               related_name='follower')
+                             related_name='follower')
+    # ссылка на объект пользователя, на которого подписываюсь я
     author = models.ForeignKey(User, on_delete=models.CASCADE,
                                related_name='following')
 
     class Meta:
+        # Защита от дубликатов
         constraints = [
-            constraints.UniqueConstraint(fields=['user', 'author'], name='uniq_follow'),
-            constraints.CheckConstraint(check=~Q(user = F('author'), name='no_sefly'))
+            models.UniqueConstraint(
+                fields=['user', 'author'], name='uniq_follow'
+            )
         ]
