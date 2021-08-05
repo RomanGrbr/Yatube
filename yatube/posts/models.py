@@ -28,7 +28,7 @@ class Post(models.Model):
     group = models.ForeignKey(Group, on_delete=models.SET_NULL,
                               related_name='posts', blank=True, null=True,
                               help_text='Выбирете группу публикации')
-    image = models.ImageField(upload_to='posts/media/', blank=True, null=True)
+    image = models.ImageField(upload_to='posts/', blank=True, null=True)
 
     def __str__(self):
         return f'{self.text[:15]}'
@@ -70,5 +70,5 @@ class Follow(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'author'], name='uniq_follow'
-            )
+            ),
         ]
