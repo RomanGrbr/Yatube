@@ -19,8 +19,8 @@
           <ul class="list-group list-group-flush">
             <li class="list-group-item">
               <div class="h6 text-muted">
-                Подписчиков: XXX <br>
-                Подписан: XXX
+                Подписчиков: {{ following_list }} <br>
+                Подписан: {{ follower_list }}
               </div>
             </li>
             <li class="list-group-item">
@@ -36,7 +36,6 @@
       <!-- Пост -->
         {% include "posts/post_item.html" with post=post %}
         {% include "posts/comments.html" %}
-        {% include "paginator.html" %}
       </div>
     </div>
   </main>

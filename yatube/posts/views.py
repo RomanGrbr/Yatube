@@ -36,8 +36,9 @@ def group_posts(request, slug):
 @require_http_methods(['GET'])
 def profile(request, username):
     user = get_object_or_404(User, username=username)
-    following = user.following.count()
-    follower = user.follower.count()
+    following = user.following.all().exists()
+    following_list = user.following.count()
+    follower_list = user.follower.count()
     posts = user.posts.all()
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
@@ -45,7 +46,8 @@ def profile(request, username):
     context = {'user_name': user,
                'page': page,
                'following': following,
-               'follower': follower
+               'following_list': following_list,
+               'follower_list': follower_list
                }
     return render(request, 'posts/profile.html', context)
 
@@ -53,14 +55,18 @@ def profile(request, username):
 @require_http_methods(['GET'])
 def post_view(request, username, post_id):
     user = get_object_or_404(User, username=username)
+    following_list = user.following.count()
+    follower_list = user.follower.count()
     post = get_object_or_404(Post, id=post_id, author=user)
     form = CommentForm(request.POST or None)
     comment = Comment.objects.all().filter(post_id=post_id)
     context = {
         'user_name': user,
         'post': post,
-        "form": form,
-        "comment": comment
+        'form': form,
+        'comment': comment,
+        'following_list': following_list,
+        'follower_list': follower_list
     }
     return render(request, 'posts/post.html', context)
 
@@ -128,6 +134,10 @@ def add_comment(request, username, post_id):
 
 @login_required
 def follow_index(request):
+    posts = Post.objects.filter(author__following__user=request.user)
+    paginator = Paginator(posts, 10)
+    page_number = request.GET.get('page')
+    page = paginator.get_page(page_number)
     if Follow.objects.filter(user=request.user).exists():
         post = Post.objects.filter(author__following__user=request.user)
         paginator = Paginator(post, 10)
@@ -135,7 +145,7 @@ def follow_index(request):
         page = paginator.get_page(page_number)
         context = {'page': page}
         return render(request, 'posts/follow.html', context)
-    return render(request, 'posts/follow.html')
+    return render(request, 'posts/follow.html', {'page': page})
 
 
 @login_required
