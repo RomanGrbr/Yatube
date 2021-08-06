@@ -1,10 +1,10 @@
 import shutil
 import tempfile
-import unittest
 from datetime import date
 
 from django import forms
 from django.conf import settings
+from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -74,6 +74,7 @@ class PagesViewTests(TestCase):
         self.user_pupkin = User.objects.create_user(username="Pupkin")
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user_pupkin)
+        cache.clear()
 
     def test_follow_unfollow(self):
         """
@@ -134,8 +135,6 @@ class PagesViewTests(TestCase):
         response = self.authorized_client.get(reverse("follow_index"))
 
         # TODO Иваном проверить отсутсвие постов
-        # assert len(response.context['page']
-        # ) == 0 ('проверить отсутсвие постов')
 
     def test_comment_follow_post(self):
         """Только авторизированный пользователь может комментировать посты."""
@@ -185,7 +184,7 @@ class PagesViewTests(TestCase):
                 response = self.authorized_client.get(reverse_name)
                 self.assertTemplateUsed(response, template)
 
-    @unittest.skip("Гонит по ночам.")
+    # @unittest.skip("Гонит по ночам.")
     def test_index_page_show_correct_context(self):
         """Шаблон index сформирован с правильным контекстом."""
         response = self.guest_client.get(reverse("index"))
