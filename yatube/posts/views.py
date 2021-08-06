@@ -139,10 +139,6 @@ def follow_index(request):
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
     if Follow.objects.filter(user=request.user).exists():
-        post = Post.objects.filter(author__following__user=request.user)
-        paginator = Paginator(post, 10)
-        page_number = request.GET.get('page')
-        page = paginator.get_page(page_number)
         context = {'page': page}
         return render(request, 'posts/follow.html', context)
     return render(request, 'posts/follow.html', {'page': page})
