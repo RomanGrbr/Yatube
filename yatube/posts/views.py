@@ -18,10 +18,6 @@ def index(request):
         paginator = Paginator(posts, 10)
         page = paginator.get_page(page_number)
         cache.set('index_page' + f"?page={page_number}", page, timeout=20)
-        context = {'page': page}
-        return render(request, 'posts/index.html', context)
-    paginator = Paginator(page, 10)
-    page = paginator.get_page(page_number)
     context = {'page': page}
     return render(request, 'posts/index.html', context)
 
