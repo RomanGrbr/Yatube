@@ -7,16 +7,17 @@ from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.test import override_settings
 
+from ..forms import PostForm
 from ..models import Group, Post, User
 
 
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp(dir=settings.BASE_DIR))
 class PostCreateFormTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-
-        settings.MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
         cls.user = User.objects.create_user(username="yandex")
         cls.group = Group.objects.create(
@@ -31,6 +32,8 @@ class PostCreateFormTests(TestCase):
             group=PostCreateFormTests.group,
         )
 
+        cls.form = PostForm()
+
     @classmethod
     def tearDownClass(cls):
         # Метод shutil.rmtree удаляет директорию и всё её содержимое
@@ -42,6 +45,7 @@ class PostCreateFormTests(TestCase):
         self.user = User.objects.create_user(username="pupkin")
         self.authorized_client = Client()
         self.authorized_client.force_login(PostCreateFormTests.user)
+        cache.clear()
 
     def test_create_post(self):
         """Создание поста с редиректом"""
@@ -78,7 +82,7 @@ class PostCreateFormTests(TestCase):
                 group=PostCreateFormTests.group.id,
                 text="Test text2",
                 author=PostCreateFormTests.user.id,
-                image=Post.objects.get(id=self.post.id).image,
+                image='posts/small.gif',
             ).exists()
         )
 
@@ -152,25 +156,3 @@ class PostCreateFormTests(TestCase):
         )
         # Проверим, что ничего не упало и страница отдаёт код 200
         self.assertEqual(response.status_code, HTTPStatus.OK)
-
-    def test_cache_index_page(self):
-        """Тест для проверки кеширования главной страницы"""
-        post_count = Post.objects.count()
-        post_cache = Post.objects.create(
-            text="Test cache",
-            author=PostCreateFormTests.user,
-            group=PostCreateFormTests.group,
-        )
-
-        response_first = self.authorized_client.get(reverse("index"))
-        post_cache.delete()
-        response_second = self.authorized_client.get(reverse("index"))
-        cache.clear()
-        response_third = self.authorized_client.get(reverse("index"))
-
-        # Проверим что создалась запись
-        self.assertEqual(len(response_first.context["page"]), post_count + 1)
-        # Проверим что запись осталась после ее удаления и повторного входа
-        self.assertEqual(len(response_second.context["page"]), post_count + 1)
-        # Проверим что запись удалилась после очистки кэша и повторного входа
-        self.assertEqual(len(response_third.context["page"]), post_count)

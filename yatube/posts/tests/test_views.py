@@ -8,16 +8,17 @@ from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.test import override_settings
 
-from ..models import Group, Post, User, Follow
+from ..models import Group, Post, User
 
 
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp(dir=settings.BASE_DIR))
 class PagesViewTests(TestCase):
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-
-        settings.MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
         cls.user = User.objects.create_user(username="yandex")
 
@@ -75,96 +76,6 @@ class PagesViewTests(TestCase):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user_pupkin)
         cache.clear()
-
-    def test_follow_unfollow(self):
-        """
-        Авторизованный пользователь может подписываться на других
-        пользователей и удалять их из подписок.
-        """
-        # Создать еще одного авторизованного пользователя Василий
-        self.user_vasya = User.objects.create_user(username="Vasya")
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user_vasya)
-
-        # Подписаться Василием на Пупкина
-        Follow.objects.create(user=self.user_vasya, author=self.user_pupkin)
-        following = Follow.objects.all()
-        fol = following[0]
-
-        # Проверить что Василий подписан на Пупкина
-        self.assertEqual(fol.author, self.user_pupkin)
-
-        # Отписаться Василием от Пупкина
-        Follow.objects.filter(author_id=self.user_pupkin.id,
-                              user_id=self.user_vasya.id).delete()
-
-        # Проверить что василий не на кого не подписан
-        non_follow = Follow.objects.filter(user=self.user_vasya).exists()
-
-        self.assertNotEqual(non_follow, True)
-
-    def test_new_post_follower(self):
-        """
-        Новая запись пользователя появляется в ленте тех, кто на него подписан
-        и не появляется в ленте тех, кто не подписан на него.
-        """
-        # Создать пользователя Василий
-        self.user_vasya = User.objects.create_user(username="Vasya")
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user_vasya)
-        # Создать пост Пупкиным
-        Post.objects.create(
-            text="Pupkin text",
-            author=self.user_pupkin,
-            group=self.group, )
-
-        # Василием подписаться на Пупкина
-        Follow.objects.create(user=self.user_vasya, author=self.user_pupkin)
-        # Василием открыть ленту избранных авторов
-        response = self.authorized_client.get(reverse("follow_index"))
-
-        # Проверить наличие поста Пупкина
-        self.assertEqual(response.context['post'].text, "Pupkin text")
-
-        # Создать пользователя Иван
-        self.user_ivan = User.objects.create_user(username="Ivan")
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user_ivan)
-
-        # Иваном открыть ленту избранных авторов
-        response = self.authorized_client.get(reverse("follow_index"))
-
-        # TODO Иваном проверить отсутсвие постов
-
-    def test_comment_follow_post(self):
-        """Только авторизированный пользователь может комментировать посты."""
-        # Создать Василия
-        self.user_vasya = User.objects.create_user(username="Vasya")
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.user_vasya)
-        # Василием создать пост
-        self.post_vasya = Post.objects.create(
-            text="Vasya text",
-            author=self.user_vasya,
-            group=self.group, )
-        # Гостем заполнить форму комментария
-        form_comment = {"author": self.user_pupkin,
-                        "post": self.post_vasya,
-                        "text": "Guest comment"}
-
-        # Отправить форму комментария
-        response = self.guest_client.post(
-            reverse('add_comment',
-                    kwargs={
-                        "username": self.user_vasya,
-                        "post_id": self.post_vasya.id
-                    }
-                    ), data=form_comment, follow=True)
-
-        # Проверить редирект с формы на авторизацию
-        redirect = f"/auth/login/?next=/{self.user_vasya}/" \
-                   f"{self.post_vasya.id}/comment/"
-        self.assertRedirects(response, redirect)
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -312,3 +223,30 @@ class PagesViewTests(TestCase):
         response = self.client.get(reverse("index") + "?page=2")
 
         self.assertEqual(len(response.context["page"].object_list), 4)
+
+    def test_cache_index_page(self):
+        """Тест для проверки кеширования главной страницы"""
+        post_cache = Post.objects.create(
+            text="Test cache",
+            author=self.user,
+            group=self.group,
+        )
+
+        response_first = self.authorized_client.get(reverse("index"))
+        post_cache.delete()
+        response_second = self.authorized_client.get(reverse("index"))
+        cache.clear()
+        response_third = self.authorized_client.get(reverse("index"))
+
+        # Проверим что создалась запись
+        self.assertEqual(response_first.context["page"][0].text,
+                         post_cache.text
+                         )
+        # Проверим что запись осталась после ее удаления и повторного входа
+        self.assertEqual(response_second.context["page"][0].text,
+                         post_cache.text
+                         )
+        # Проверим что запись удалилась после очистки кэша и повторного входа
+        self.assertEqual(response_third.context["page"][0].text,
+                         self.post.text
+                         )

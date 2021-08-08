@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.utils import timezone
 
 User = get_user_model()
 
@@ -50,11 +49,6 @@ class Comment(models.Model):
 
     def __str__(self):
         return f'{self.text[:10]}'
-
-    def save(self, *args, **kwargs):
-        if self.created is None:
-            self.created = timezone.now()
-        super().save(*args, **kwargs)
 
 
 class Follow(models.Model):
