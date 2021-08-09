@@ -12,12 +12,13 @@ from .models import Comment, Follow, Group, Post, User
 @require_http_methods(['GET'])
 def index(request):
     page_number = request.GET.get('page')
-    page = cache.get('index_page' + f"?page={page_number}")
+    key_page_number = 'index_page' + f"?page={page_number}"
+    page = cache.get(key_page_number)
     if page is None:
         posts = Post.objects.all()
         paginator = Paginator(posts, 10)
         page = paginator.get_page(page_number)
-        cache.set('index_page' + f"?page={page_number}", page, timeout=20)
+        cache.set(key_page_number, page, timeout=20)
     context = {'page': page}
     return render(request, 'posts/index.html', context)
 

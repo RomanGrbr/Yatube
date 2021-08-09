@@ -10,7 +10,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.test import override_settings
 
-from ..models import Group, Post, User
+from ..models import Group, Post, User, Follow
 
 
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp(dir=settings.BASE_DIR))
@@ -250,3 +250,122 @@ class PagesViewTests(TestCase):
         self.assertEqual(response_third.context["page"][0].text,
                          self.post.text
                          )
+
+    def test_comment_follow_post(self):
+        """Только авторизированный пользователь может комментировать посты."""
+        # Пупкиным создать пост
+        self.post_pupkin = Post.objects.create(
+            text="Pupkin text",
+            author=self.user_pupkin,
+            group=self.group, )
+        # Гостем заполнить форму комментария
+        form_comment = {"author": self.user_pupkin,
+                        "post": self.post_pupkin,
+                        "text": "Guest comment"}
+
+        # Отправить форму комментария
+        response = self.guest_client.post(
+            reverse('add_comment',
+                    kwargs={
+                        "username": self.user_pupkin,
+                        "post_id": self.post_pupkin.id
+                    }
+                    ), data=form_comment, follow=True)
+
+        # Проверить редирект с формы на авторизацию
+        redirect = f"/auth/login/?next=/{self.user_pupkin}/" \
+                   f"{self.post_pupkin.id}/comment/"
+        self.assertRedirects(response, redirect)
+
+
+class FollowViewTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        cls.user = User.objects.create_user(username="Masha")
+        cls.user_pupkin = User.objects.create_user(username="Pupkin")
+        cls.user_vasya = User.objects.create_user(username="Vasya")
+        cls.user_ivan = User.objects.create_user(username="Ivan")
+
+        cls.group = Group.objects.create(
+            title="Test Title",
+            slug="test-group",
+            description="Description",
+        )
+
+    def setUp(self):
+        # Создаём неавторизованный клиент
+        self.guest_client = Client()
+        # Создаём авторизованный клиент
+        self.authorized_client_pupkin = Client()
+        self.authorized_client_vasya = Client()
+        self.authorized_client_ivan = Client()
+        self.authorized_client_pupkin.force_login(self.user_pupkin)
+        self.authorized_client_vasya.force_login(self.user_vasya)
+        self.authorized_client_ivan.force_login(self.user_ivan)
+        cache.clear()
+
+    def test_follow(self):
+        """
+        Авторизованный пользователь может подписываться на других
+        пользователей и удалять их из подписок.
+        """
+        # Подписаться Василием на Пупкина
+        self.authorized_client_vasya.get(
+            reverse("profile_follow", kwargs={"username": "Pupkin"}))
+
+        # Достать объекты подписок
+        following = Follow.objects.all()
+        fol = following[0]
+
+        # Проверить что Василий подписан на Пупкина
+        self.assertEqual(fol.author, self.user_pupkin)
+
+    def test_unfollow(self):
+        # Отписаться Василием от Пупкина
+        self.authorized_client_vasya.get(
+            reverse("profile_unfollow", kwargs={"username": "Pupkin"}))
+
+        non_follow = Follow.objects.filter(user=self.user_vasya).exists()
+
+        # Проверить что василий не на кого не подписан
+        self.assertNotEqual(non_follow, True)
+
+    def test_new_post_follower(self):
+        """
+        Новая запись пользователя появляется в ленте тех, кто на него подписан.
+        """
+        # Создать пост Пупкиным
+        pupkin_post = Post.objects.create(
+            text="Pupkin text",
+            author=self.user_pupkin,
+            group=self.group,
+        )
+
+        # Василием подписаться на Пупкина
+        self.authorized_client_vasya.get(
+            reverse("profile_follow", kwargs={"username": "Pupkin"}))
+        # Василием открыть ленту избранных авторов
+        response = self.authorized_client_vasya.get(reverse("follow_index"))
+
+        # Проверить наличие поста Пупкина
+        self.assertEqual(response.context["page"][0].text, pupkin_post.text)
+
+    def test_no_new_unfollower_post(self):
+        """
+        Новая запись пользователя не появляется в ленте тех,
+        кто не подписан на него.
+        """
+        # Создать пост Иваном
+        Post.objects.create(
+            text="Ivan text",
+            author=self.user_ivan,
+            group=self.group,
+        )
+
+        # Василием открыть ленту избранных авторов
+        response = self.authorized_client_vasya.get(reverse("follow_index"))
+
+        # Проверить отсутсвие постов
+        self.assertFalse(response.context["page"].has_next(), False)
