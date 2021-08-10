@@ -95,7 +95,6 @@ class PagesViewTests(TestCase):
                 response = self.authorized_client.get(reverse_name)
                 self.assertTemplateUsed(response, template)
 
-    # @unittest.skip("Гонит по ночам.")
     def test_index_page_show_correct_context(self):
         """Шаблон index сформирован с правильным контекстом."""
         response = self.guest_client.get(reverse("index"))
@@ -316,13 +315,15 @@ class FollowViewTests(TestCase):
             reverse("profile_follow", kwargs={"username": "Pupkin"}))
 
         # Достать объекты подписок
-        following = Follow.objects.all()
-        fol = following[0]
+        following = Follow.objects.first()
 
         # Проверить что Василий подписан на Пупкина
-        self.assertEqual(fol.author, self.user_pupkin)
+        self.assertEqual(following.author, self.user_pupkin)
 
     def test_unfollow(self):
+        # Подписаться Василием на Пупкина
+        self.authorized_client_vasya.get(
+            reverse("profile_follow", kwargs={"username": "Pupkin"}))
         # Отписаться Василием от Пупкина
         self.authorized_client_vasya.get(
             reverse("profile_unfollow", kwargs={"username": "Pupkin"}))
@@ -344,8 +345,7 @@ class FollowViewTests(TestCase):
         )
 
         # Василием подписаться на Пупкина
-        self.authorized_client_vasya.get(
-            reverse("profile_follow", kwargs={"username": "Pupkin"}))
+        Follow.objects.create(author=self.user_pupkin, user=self.user_vasya)
         # Василием открыть ленту избранных авторов
         response = self.authorized_client_vasya.get(reverse("follow_index"))
 
