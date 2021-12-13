@@ -322,8 +322,7 @@ class FollowViewTests(TestCase):
 
     def test_unfollow(self):
         # Подписаться Василием на Пупкина
-        self.authorized_client_vasya.get(
-            reverse("profile_follow", kwargs={"username": "Pupkin"}))
+        Follow.objects.create(author=self.user_pupkin, user=self.user_vasya)
         # Отписаться Василием от Пупкина
         self.authorized_client_vasya.get(
             reverse("profile_unfollow", kwargs={"username": "Pupkin"}))

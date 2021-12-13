@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '8e0i)t2$2m6ao#8ts@twll2g1i(9#opub6)w^#%r$iq9sg^_9h'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = [
     "www.romangrbr.pythonanywhere.com",
